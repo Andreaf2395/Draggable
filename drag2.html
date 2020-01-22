@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Page Title</title>
+<link rel="stylesheet" type="text/css" href="anseki-plain-draggable/test/snap-view.css">
+<script src="displace.js"></script>
+<style>
+   
+.custom-fn__wrapper{
+    width:4525px;
+    height:400px;
+    border: 1px solid #c6989854;
+    position:relative;
+    }
+
+.custom-fn__div{
+    display:inline-block;
+    height:49px;
+    width: 30px;
+    cursor:move;
+    top: 10px;
+    box-sizing: border-box;
+    }
+.custom-fn__line{
+    background: rgba(98, 15, 15, 0.8);
+    display:inline-block;
+    position:absolute;
+    }
+
+    .flex-container{
+        display:flex
+    }
+    .left-panel{
+        width: 10%;
+        flex-grow: 1;
+        border:2px solid black;
+    }
+    .right-panel{
+        width:90%;
+        flex-grow:2;
+        border:2px solid blue;
+    }
+    #box{
+            height:600px;
+            width: 95%;
+            margin: 10px 10px;
+            border: 1px solid black;
+            padding:50px 10px;
+    }
+    #parent{
+        overflow-x: scroll;
+        padding: 30px;
+    }
+    #red-stationary{
+        background: #ff000070;
+        padding: 3px;
+        position: absolute;
+        display:inline-block;
+        width:59px;
+        height:49px;
+    }
+    #green-stationary{
+        background:#46ae11ba;
+        padding: 3px;
+        top : 100px;
+        position: absolute;
+        display:inline-block;
+        width:59px;
+        height:49px;
+    }  
+    #blue-stationary{
+        background: #0000ff96;
+        padding: 3px;
+        top: 200px;
+        position: absolute;
+        display:inline-block;
+        width:59px;
+        height:49px;
+    }       
+
+    .red-item{
+        width:249px;
+        background: #ed0000;
+        bottom:-100px;
+    }     
+    .green-item{
+        width:749px;
+        background:#46ae11;
+        bottom:-200px;
+    }  
+    .blue-item{
+        width:749px;
+        background:blue;
+        bottom:-300px;
+    }         
+    .not-placed{
+        border:2px white dashed;
+        opacity: 0.5;
+        z-index: 1000;
+    }
+
+
+    /* animation */
+    @-webkit-keyframes shake {
+  from, to {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  10%, 30%, 50%, 70%, 90% {
+    -webkit-transform: translate3d(-10px, 0, 0);
+    transform: translate3d(-10px, 0, 0);
+  }
+
+  20%, 40%, 60%, 80% {
+    -webkit-transform: translate3d(10px, 0, 0);
+    transform: translate3d(10px, 0, 0);
+  }
+  0%, 100%{
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes shake {
+  from, to {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  10%, 30%, 50%, 70%, 90% {
+    -webkit-transform: translate3d(-10px, 0, 0);
+    transform: translate3d(-10px, 0, 0);
+  }
+
+  20%, 40%, 60%, 80% {
+    -webkit-transform: translate3d(10px, 0, 0);
+    transform: translate3d(10px, 0, 0);
+  }
+  0%, 100%{
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.shake {
+  -webkit-animation-name: shake;
+  animation-name: shake;
+}
+
+.animated {
+  -webkit-animation-duration: 1s;
+  animation-duration: 1s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+  animation-iteration-count:infinite;
+}
+</style>
+
+</head>
+<body>
+
+    <div class="flex-container">
+        <div class="left-panel">
+            <span id="red-stationary" ondblclick="createNewDrag('red')" ></span>
+            <span id="green-stationary" ondblclick="createNewDrag('green')" ></span>
+            <span id="blue-stationary" ondblclick="createNewDrag('blue')"></span>
+        </div>
+        <div class="right-panel">
+                <div id="box" >
+                    <div id="parent" onscroll="console.log(event.target.scrollLeft)">
+                        <!-- <div class="custom-fn"> -->
+                            <div class="custom-fn__wrapper" id ="drag-container">
+                                
+                               <!-- <span class="custom-fn__div" id="red-item" oncontextmenu="alert(event.target.nodeName)"></span> 
+                                <span class="custom-fn__div" id="green-item" ></span> 
+                                <span class="custom-fn__div" id="blue-item" ></span> -->
+                            </div>
+                              
+                        <!-- </div> -->
+                    </div>     
+    
+                </div>    
+        </div>
+
+</div>
+        
+    
+                    
+<script>
+
+
+const displace = window.displacejs;
+
+const DIV_CLASS = '.custom-fn__div';
+const WRAPPER_CLASS = '.custom-fn__wrapper';
+const LINE_CLASS = 'custom-fn__line';
+
+const LINE_SPACING = 25;
+const HORI_LINE_SPACING=50;
+const wrapper = document.querySelector(WRAPPER_CLASS);
+const box = document.querySelector('#box');
+
+
+var red_count=0;
+var green_count=0;
+var blue_count=0;
+
+// add lines
+addLines(wrapper);
+
+// start everything
+const el = document.querySelector('#red-item');
+const options = {
+	constrain: true,
+    //relativeTo: box,
+    onMouseDown:checkWhichButton,
+    onMouseUp:checkcollision,
+	customMove(el, x, y){
+		const left = Math.round(x / LINE_SPACING) * LINE_SPACING;
+		const top = Math.round(y / HORI_LINE_SPACING) * HORI_LINE_SPACING;
+		el.style.left = left + 'px';
+		el.style.top = top + 'px';
+	}
+};
+// displace(el, options);
+
+
+
+
+const el1 = document.querySelector('#green-item');
+const options1 = {
+	constrain: true,
+    //relativeTo: box,
+    onMouseDown:checkWhichButton,
+    onMouseUp:checkcollision,
+	customMove(el1, x, y){
+		const left = Math.round(x / LINE_SPACING) * LINE_SPACING;
+		const top = Math.round(y / HORI_LINE_SPACING) * HORI_LINE_SPACING;
+		el1.style.left = left + 'px';
+		el1.style.top = top + 'px';
+	}
+};
+//displace(el1, options1);
+
+
+const el3 = document.querySelector('#blue-item');
+const options3 = {
+	constrain: true,
+    //relativeTo: box,
+    onMouseDown:checkWhichButton,
+    onMouseUp:checkcollision,
+	customMove(el3, x, y){
+		const left = Math.round(x / LINE_SPACING) * LINE_SPACING;
+		const top = Math.round(y / HORI_LINE_SPACING) * HORI_LINE_SPACING;
+		el3.style.left = left + 'px';
+		el3.style.top = top + 'px';
+	}
+};
+//displace(el3, options3);
+
+
+function addLines(wrapper){
+	const w = wrapper.offsetWidth;
+	const h = wrapper.offsetHeight;
+	const lines = document.createDocumentFragment();
+
+	// vertical lines
+    console.log(w/LINE_SPACING -1);
+	for (let i=1; i<w/LINE_SPACING -1; i++){
+		const span = document.createElement('span');
+
+		span.style.top = 0;
+		span.style.left = `${i * LINE_SPACING - 1}px`;
+		span.style.width = '1px';
+		span.style.height = `${h-1}px`;
+		span.classList.add(LINE_CLASS);
+
+		lines.appendChild(span);
+	}
+
+	// horizontal lines
+	for (let i = 1; i < h / HORI_LINE_SPACING - 1; i++) {
+		const span = document.createElement('span');
+
+		span.style.left = 0;
+		span.style.top = `${i * HORI_LINE_SPACING - 1}px`;
+		span.style.height = '1px';
+		span.style.width = `${w-1}px`;
+		span.classList.add(LINE_CLASS);
+
+		lines.appendChild(span);
+	}
+
+	wrapper.prepend(lines);
+}
+
+
+
+function  checkcollision(e){
+    let moved_div=e;
+  
+    let moved_div_dimensions=moved_div.getBoundingClientRect();
+
+    //get all the draggable elements
+    var draggable_divs=document.getElementsByClassName('custom-fn__div');
+    let collision_detected=0;
+    for (drag_ele of draggable_divs){
+        if (drag_ele.id == moved_div.id)
+            continue;
+        else{
+            let drag_ele_dimensions=drag_ele.getBoundingClientRect();
+     
+            let overlap = !(moved_div_dimensions.right < drag_ele_dimensions.left || 
+                            moved_div_dimensions.left > drag_ele_dimensions.right || 
+                            moved_div_dimensions.bottom < drag_ele_dimensions.top || 
+                            moved_div_dimensions.top > drag_ele_dimensions.bottom);
+
+                if(overlap == true)  {
+                    moved_div.classList.add("not-placed");
+                    moved_div.classList.add("animated");
+                    moved_div.classList.add("shake");
+                    collision_detected=1
+                    moveElementBack(moved_div);
+                    break;
+                }          
+
+            }
+    }
+
+    if(collision_detected == 0){
+        moved_div.classList.remove("not-placed");
+        moved_div.classList.remove("shake");
+        moved_div.classList.remove("animated");
+
+    }
+}
+
+
+function moveElementBack(moved_ele){
+
+    var parent = document.getElementById('parent');
+    //  moved_ele.style.left=parent.scrollLeft+100+'px';
+    // moved_ele.style.top=0+'px';
+}
+
+function checkWhichButton(e,evt){
+    e.classList.remove("shake");
+    e.classList.remove("animated");
+   
+
+}
+
+function createNewDrag(color){
+
+
+    var parent = document.getElementById('parent');
+   
+    var drag_ele= document.createElement("span");
+    drag_ele.setAttribute('class',"custom-fn__div ");
+    drag_ele.classList.add("not-placed");
+    document.querySelector('#drag-container').appendChild(drag_ele);
+    drag_ele.style.left=parent.scrollLeft+150 +'px';
+
+    if(color === "red")
+    {
+        drag_ele.classList.add("red-item");
+        red_count++;
+        drag_ele.setAttribute('id','red'+red_count);
+        drag_ele.setAttribute('data-type', 'Rescue');
+    }
+    else if(color === "blue"){
+        drag_ele.classList.add("blue-item");
+        blue_count++;
+        drag_ele.setAttribute('id','blue'+blue_count);
+        drag_ele.setAttribute('data-type', 'Medicine');
+    }
+    else if(color === "green"){
+        drag_ele.classList.add("green-item");
+        green_count++;
+        drag_ele.setAttribute('id','green'+green_count);
+        drag_ele.setAttribute('data-type', 'Food');
+    }
+    
+    var l=displace(drag_ele,options);
+    console.log(l);
+    drag_ele.addEventListener("contextmenu", deleteElement);
+    
+}
+
+
+function deleteElement(evt){
+    console.log('to be deleted');
+    console.log(evt.target);
+    evt.target.remove();
+    evt.preventDefault();
+  
+}
+</script>
+
+</body>
+</html>
